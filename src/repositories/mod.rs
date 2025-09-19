@@ -1,11 +1,8 @@
-mod in_memory;
+pub mod in_memory;
 
 use async_trait::async_trait;
 
-use crate::{
-    entities::order::{NewOrder, Order, OrderStatus},
-
-};
+use crate::entities::order::{NewOrder, Order, OrderStatus};
 
 #[derive(Debug, Clone, Default)]
 pub struct ListOrdersQuery {
