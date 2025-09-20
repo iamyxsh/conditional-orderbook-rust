@@ -1,6 +1,8 @@
+pub mod engine;
 pub mod entities;
 pub mod errors;
 pub mod handlers;
+pub mod oracle_service;
 pub mod repositories;
 pub mod routes;
 pub mod state;
