@@ -64,3 +64,77 @@ impl OrderRepository for InMemoryOrderRepository {
         map.remove(id).map(|_| ()).ok_or_else(|| "not found".into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal_macros::dec;
+
+    use super::*;
+    use crate::entities::order::{Order, OrderSide};
+
+    fn sample_order(id: &str, pair: &str) -> Order {
+        Order {
+            id: id.to_string(),
+            pair: pair.to_string(),
+            side: OrderSide::Buy,
+            price: dec!(100.0),
+            quantity: dec!(1.0),
+            status: OrderStatus::New,
+            created: 1_700_000_000_000,
+            updated: 1_700_000_000_000,
+        }
+    }
+
+    async fn seed(repo: &InMemoryOrderRepository, orders: &[Order]) {
+        let mut w = repo.inner.write().await;
+        for o in orders {
+            w.insert(o.id.clone(), o.clone());
+        }
+    }
+
+    #[tokio::test]
+    async fn set_status_updates_status_and_timestamp() {
+        let repo = InMemoryOrderRepository::default();
+        let id = "abc";
+        let mut o = sample_order(id, "BTC/USDT");
+        o.status = OrderStatus::New;
+        o.updated = 1_700_000_000_000;
+        seed(&repo, &[o]).await;
+
+        let before = {
+            let r = repo.inner.read().await;
+            r.get(id).unwrap().clone()
+        };
+
+        let updated = repo.set_status(id, OrderStatus::Cancelled).await.unwrap();
+        assert_eq!(updated.id, id);
+        assert_eq!(updated.status, OrderStatus::Cancelled);
+        assert!(updated.updated >= before.updated);
+
+        let after = {
+            let r = repo.inner.read().await;
+            r.get(id).unwrap().clone()
+        };
+        assert_eq!(after.status, OrderStatus::Cancelled);
+        assert!(after.updated >= before.updated);
+    }
+
+    #[tokio::test]
+    async fn delete_removes_order() {
+        let repo = InMemoryOrderRepository::default();
+        let id = "deadbeef";
+        seed(&repo, &[sample_order(id, "ETH/USDT")]).await;
+
+        repo.delete(id).await.unwrap();
+
+        let r = repo.inner.read().await;
+        assert!(!r.contains_key(id));
+    }
+
+    #[tokio::test]
+    async fn delete_nonexistent_returns_err() {
+        let repo = InMemoryOrderRepository::default();
+        let err = repo.delete("nope").await.unwrap_err();
+        assert!(!err.is_empty());
+    }
+}

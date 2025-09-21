@@ -32,13 +32,3 @@ impl ResponseError for ApiError {
         })
     }
 }
-
-#[derive(Debug, thiserror::Error)]
-pub enum RepoErr {
-    #[error("not found")]
-    NotFound,
-    #[error("precondition failed")]
-    PreconditionFailed,
-    #[error("duplicate client_order_id")]
-    DuplicateClientOrderId,
-}
