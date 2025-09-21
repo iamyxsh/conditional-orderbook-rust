@@ -1,8 +1,9 @@
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenvy::dotenv;
-use oracle_service::{OracleCache, OracleWsClient};
 use tracing_subscriber::{fmt::SubscriberBuilder, EnvFilter};
 
+use crate::engine::start_matchers;
+use crate::oracle_service::{OracleCache, OracleWsClient};
 use crate::repositories::in_memory::InMemoryOrderRepository;
 
 pub mod engine;
@@ -26,10 +27,23 @@ async fn main() -> std::io::Result<()> {
 
     let cache = OracleCache::default();
     OracleWsClient::default().spawn(cache.clone());
+    let cache_data = web::Data::new(cache.clone());
 
-    let cache_data = web::Data::new(cache);
+    let repo = InMemoryOrderRepository::default();
+    let state = state::AppState::new(repo.clone());
 
-    let state = state::AppState::new(InMemoryOrderRepository::default());
+    let assets = vec![
+        "BTC/USDT".to_string(),
+        "ETH/USDT".to_string(),
+        "SOL/USDT".to_string(),
+    ];
+
+    start_matchers(
+        assets,
+        repo.clone(),
+        cache.clone(),
+        std::time::Duration::from_secs(1),
+    );
 
     HttpServer::new(move || {
         App::new()
