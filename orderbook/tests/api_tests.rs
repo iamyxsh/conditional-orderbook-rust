@@ -1,5 +1,6 @@
 use actix_web::test::{self, TestRequest};
 use actix_web::{http::StatusCode, App};
+use rust_decimal_macros::dec;
 use serde_json::json;
 
 use conditional_orderbook::{
@@ -52,8 +53,8 @@ async fn orders_create_and_get() {
 
     let created: Order = test::read_body_json(resp).await;
     assert_eq!(created.pair, "BTC/USDT");
-    assert_eq!(created.price, 25000.5);
-    assert_eq!(created.quantity, 0.1);
+    assert_eq!(created.price, dec!(25000.5));
+    assert_eq!(created.quantity, dec!(0.1));
     assert_eq!(created.status, OrderStatus::New);
     assert!(!created.id.is_empty());
 
