@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use std::time::Duration;
 use tokio::time::{interval, MissedTickBehavior};
 use tracing::{debug, error, info, instrument};
@@ -64,7 +65,7 @@ async fn run_worker<R: OrderRepository>(
             }
         }
 
-        info!(%asset, tick = ticks, oracle_px = px, oracle_ts = ts, active = active.len(), "tick");
+        info!(%asset, tick = ticks, oracle_px = px.to_string(), oracle_ts = ts, active = active.len(), "tick");
 
         if active.is_empty() {
             debug!(%asset, tick = ticks, "no active orders");
@@ -89,14 +90,14 @@ async fn run_worker<R: OrderRepository>(
                 match repo.set_status(&o.id, OrderStatus::Open).await {
                     Ok(_) => {
                         promoted += 1;
-                        debug!(%asset, order_id = %o.id, limit_px = o.price, oracle_px = px, "promoted NEW -> OPEN (not crossing)");
+                        debug!(%asset, order_id = %o.id, limit_px = o.price.to_string(), oracle_px = px.to_string(), "promoted NEW -> OPEN (not crossing)");
                     }
                     Err(e) => {
                         error!(%asset, order_id = %o.id, err = %e, "failed to promote NEW -> OPEN");
                     }
                 }
             } else {
-                debug!(%asset, order_id = %o.id, status = ?o.status, limit_px = o.price, oracle_px = px, "not crossing");
+                debug!(%asset, order_id = %o.id, status = ?o.status, limit_px = o.price.to_string(), oracle_px = px.to_string(), "not crossing");
             }
         }
 
@@ -104,21 +105,21 @@ async fn run_worker<R: OrderRepository>(
     }
 }
 
-fn crosses(o: &Order, oracle_px: f64) -> bool {
+fn crosses(o: &Order, oracle_px: Decimal) -> bool {
     match o.side {
         OrderSide::Buy => o.price >= oracle_px,
         OrderSide::Sell => o.price <= oracle_px,
     }
 }
 
-fn log_exec(o: &Order, px: f64, ts_ms: i64) {
+fn log_exec(o: &Order, px: Decimal, ts_ms: i64) {
     info!(
-        pair = %o.pair,
-        side = ?o.side,
-        order_id = %o.id,
-        qty = o.quantity,
-        limit_px = o.price,
-        exec_px = px,
+        pair      = %o.pair,
+        side      = ?o.side,
+        order_id  = %o.id,
+        qty       = %o.quantity,
+        limit_px  = %o.price,
+        exec_px   = %px,
         oracle_ts = ts_ms,
         "EXECUTE"
     );

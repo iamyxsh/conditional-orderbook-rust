@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,8 +26,8 @@ pub struct Order {
     pub id: String,
     pub pair: String,
     pub side: OrderSide,
-    pub price: f64,
-    pub quantity: f64,
+    pub price: Decimal,
+    pub quantity: Decimal,
     pub status: OrderStatus,
     pub created: i64,
     pub updated: i64,
@@ -36,12 +37,12 @@ pub struct Order {
 pub struct NewOrder {
     pub pair: String,
     pub side: OrderSide,
-    pub price: f64,
-    pub quantity: f64,
+    pub price: Decimal,
+    pub quantity: Decimal,
 }
 
 impl Order {
-    pub fn new(pair: String, side: OrderSide, price: f64, quantity: f64) -> Self {
+    pub fn new(pair: String, side: OrderSide, price: Decimal, quantity: Decimal) -> Self {
         let now = now_ms();
         Self {
             id: Uuid::new_v4().to_string(),

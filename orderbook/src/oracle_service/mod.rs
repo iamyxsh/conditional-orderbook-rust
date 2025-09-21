@@ -1,4 +1,5 @@
 use futures_util::StreamExt;
+use rust_decimal::Decimal;
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::{sync::RwLock, time::sleep};
@@ -7,7 +8,7 @@ use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 #[derive(Debug, Clone, Deserialize)]
 pub struct Tick {
     pub pair: String,
-    pub price: f64,
+    pub price: Decimal,
     pub ts_ms: i64,
 }
 
@@ -22,7 +23,7 @@ impl OracleCache {
         w.insert(t.pair.clone(), t);
     }
 
-    pub async fn get_price(&self, pair: &str) -> Option<(f64, i64)> {
+    pub async fn get_price(&self, pair: &str) -> Option<(Decimal, i64)> {
         let r = self.inner.read().await;
         r.get(pair).map(|t| (t.price, t.ts_ms))
     }

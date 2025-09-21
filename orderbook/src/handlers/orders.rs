@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 use crate::entities::order::{NewOrder, Order, OrderSide, OrderStatus};
@@ -10,8 +11,8 @@ use crate::state::AppState;
 pub struct CreateOrderPayload {
     pub pair: String,
     pub side: OrderSide,
-    pub price: f64,
-    pub quantity: f64,
+    pub price: Decimal,
+    pub quantity: Decimal,
 }
 
 #[derive(Debug, Deserialize)]
